@@ -19,14 +19,14 @@ class CaptionTrack(BaseModel):
     name: Name = Field(..., validation_alias="name")
     vss_id: str = Field(..., validation_alias="vssId")
     language_code: str = Field(..., validation_alias="languageCode")
-    kind: str = Field(..., validation_alias="kind")
+    kind: str | None = Field(None, validation_alias="kind")
     is_translatable: bool = Field(..., validation_alias="isTranslatable")
     track_name: str = Field(..., validation_alias="trackName")
 
 
 class AudioTrack(BaseModel):
     caption_track_indices: list[int] = Field(..., validation_alias="captionTrackIndices")
-    audio_track_id: str = Field(..., validation_alias="audioTrackId")
+    audio_track_id: str | None = Field(None, validation_alias="audioTrackId")
 
 
 class TranslationLanguage(BaseModel):
