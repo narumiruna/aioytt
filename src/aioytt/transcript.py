@@ -117,6 +117,9 @@ async def get_transcript_from_video_id(
 
     caption_track = get_caption_track(captions.caption_tracks, language_codes)
 
+    if not caption_track.base_url:
+        raise CaptionsNotFoundError()
+
     xml = await fetch_html(caption_track.base_url)
     return parse_transcript(xml)
 
