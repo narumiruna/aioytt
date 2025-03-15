@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from .caption import Captions
 from .caption import CaptionTrack
+from .video_id import parse_video_id
 
 WATCH_URL: Final[str] = "https://www.youtube.com/watch?"
 
@@ -102,7 +103,9 @@ def parse_transcript(xml: str) -> list[TranscriptSnippet]:
     ]
 
 
-async def get_transcript(video_id: str, language_codes: str | Iterable[str] = ("en",)) -> list[TranscriptSnippet]:
+async def get_transcript_from_video_id(
+    video_id: str, language_codes: str | Iterable[str] = ("en",)
+) -> list[TranscriptSnippet]:
     video_html = await fetch_video_html(video_id)
 
     captions = parse_captions(video_html)
@@ -111,3 +114,8 @@ async def get_transcript(video_id: str, language_codes: str | Iterable[str] = ("
 
     xml = await fetch_html(caption_track.base_url)
     return parse_transcript(xml)
+
+
+async def get_transcript_from_url(url: str, language_codes: str | Iterable[str] = ("en",)) -> list[TranscriptSnippet]:
+    video_id = parse_video_id(url)
+    return await get_transcript_from_video_id(video_id, language_codes)

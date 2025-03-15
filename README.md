@@ -5,16 +5,16 @@ import asyncio
 
 from rich import print
 
-from aioytt.transcript import get_transcript
+from aioytt.transcript import get_transcript_from_url
 
 
-async def main(video_id: str) -> None:
-    transcript = await get_transcript(video_id)
+async def main(url: str) -> None:
+    transcript = await get_transcript_from_url(url)
     for snippet in transcript:
         print(snippet)
 
 
 if __name__ == "__main__":
-    asyncio.run(main("video_id"))
+    asyncio.run(main("url"))
 
 ```
