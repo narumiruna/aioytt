@@ -14,6 +14,8 @@ from pydantic import BaseModel
 
 from .caption import Captions
 from .caption import CaptionTrack
+from .errors import CaptionsNotFoundError
+from .errors import InitialPlayerResponseNotFoundError
 from .video_id import parse_video_id
 
 WATCH_URL: Final[str] = "https://www.youtube.com/watch?"
@@ -43,13 +45,13 @@ def parse_captions(html: str) -> Captions:
     splitted_html = html.split("var ytInitialPlayerResponse =")
 
     if len(splitted_html) < 2:
-        raise ValueError("Could not find ytInitialPlayerResponse")
+        raise InitialPlayerResponseNotFoundError()
 
     response_json = json.loads(splitted_html[1].split("</script>")[0].strip(";"))
 
     captions_json = response_json.get("captions", {}).get("playerCaptionsTracklistRenderer")
     if not captions_json or "captionTracks" not in captions_json:
-        raise ValueError("Could not find captions")
+        raise CaptionsNotFoundError()
 
     return Captions.model_validate(captions_json)
 
@@ -66,6 +68,9 @@ async def fetch_html(url: str, params=None) -> str:
 
 
 def get_caption_track(caption_tracks: list[CaptionTrack], language_codes: str | Iterable[str]) -> CaptionTrack:
+    if not caption_tracks:
+        raise CaptionsNotFoundError()
+
     if len(caption_tracks) == 1:
         return caption_tracks[0]
 
