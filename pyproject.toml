@@ -5,7 +5,11 @@ description = ""
 readme = "README.md"
 authors = [{ name = "narumi", email = "toucans-cutouts0f@icloud.com" }]
 requires-python = ">=3.12"
-dependencies = ["httpx>=0.28.1", "loguru>=0.7.3"]
+dependencies = [
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "pydantic>=2.10.6",
+]
 
 # [project.scripts]
 # aioytt = "aioytt.cli:main"
