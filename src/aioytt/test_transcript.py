@@ -8,6 +8,7 @@ from .errors import CaptionsNotFoundError
 from .transcript import TranscriptSnippet
 from .transcript import get_transcript_from_url
 from .transcript import get_transcript_from_video_id
+from .transcript import parse_transcript
 
 VIDEO_ID: Final[str] = "dQw4w9WgXcQ"
 YOUTUBE_URL: Final[str] = f"https://www.youtube.com/watch?v={VIDEO_ID}"
@@ -149,3 +150,72 @@ async def test_get_transcript_from_video_id_no_captions_url():
         # Assert error is raised
         with pytest.raises(CaptionsNotFoundError):
             await get_transcript_from_video_id(VIDEO_ID)
+
+
+def test_parse_transcript_with_valid_xml():
+    """Test parse_transcript with valid XML containing caption data."""
+    xml = """
+    <transcript>
+        <text start="0.0" dur="1.0">Hello</text>
+        <text start="1.0" dur="2.0">World</text>
+        <text start="3.0" dur="1.5">Testing</text>
+    </transcript>
+    """
+
+    result = parse_transcript(xml)
+
+    assert len(result) == 3
+    assert result[0] == TranscriptSnippet(text="Hello", start=0.0, duration=1.0)
+    assert result[1] == TranscriptSnippet(text="World", start=1.0, duration=2.0)
+    assert result[2] == TranscriptSnippet(text="Testing", start=3.0, duration=1.5)
+
+
+def test_parse_transcript_with_missing_duration():
+    """Test parse_transcript handles XML elements without duration attribute."""
+    xml = """
+    <transcript>
+        <text start="1.5">No duration specified</text>
+        <text start="3.0" dur="2.0">With duration</text>
+    </transcript>
+    """
+
+    result = parse_transcript(xml)
+
+    assert len(result) == 2
+    assert result[0] == TranscriptSnippet(text="No duration specified", start=1.5, duration=0.0)
+    assert result[1] == TranscriptSnippet(text="With duration", start=3.0, duration=2.0)
+
+
+def test_parse_transcript_with_empty_elements():
+    """Test parse_transcript filters out elements with no text content."""
+    xml = """
+    <transcript>
+        <text start="0.0" dur="1.0">Valid text</text>
+        <text start="1.0" dur="1.0"></text>
+        <text start="2.0" dur="1.0">Another valid text</text>
+    </transcript>
+    """
+
+    result = parse_transcript(xml)
+
+    assert len(result) == 2
+    assert result[0].text == "Valid text"
+    assert result[1].text == "Another valid text"
+
+
+def test_parse_transcript_with_html_entities():
+    """Test parse_transcript correctly unescapes HTML entities."""
+    xml = """
+    <transcript>
+        <text start="0.0" dur="1.0">I &amp; you</text>
+        <text start="1.0" dur="1.0">Less &lt; Greater &gt;</text>
+        <text start="2.0" dur="1.0">Quote &quot;test&quot;</text>
+    </transcript>
+    """
+
+    result = parse_transcript(xml)
+
+    assert len(result) == 3
+    assert result[0].text == "I & you"
+    assert result[1].text == "Less < Greater >"
+    assert result[2].text == 'Quote "test"'

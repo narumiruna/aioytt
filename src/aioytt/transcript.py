@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Iterable
-from functools import cache
 from html import unescape
-from re import Pattern
 from typing import Final
 from xml.etree import ElementTree
 
@@ -85,21 +82,10 @@ def get_caption_track(caption_tracks: list[CaptionTrack], language_codes: str | 
     return caption_tracks[0]
 
 
-@cache
-def _get_html_regex(preserve_formatting: bool) -> Pattern[str]:
-    if preserve_formatting:
-        formats_regex = "|".join(_FORMATTING_TAGS)
-        formats_regex = r"<\/?(?!\/?(" + formats_regex + r")\b).*?\b>"
-        html_regex = re.compile(formats_regex, re.IGNORECASE)
-    else:
-        html_regex = re.compile(r"<[^>]*>", re.IGNORECASE)
-    return html_regex
-
-
 def parse_transcript(xml: str) -> list[TranscriptSnippet]:
     return [
         TranscriptSnippet(
-            text=re.sub(_get_html_regex(preserve_formatting=False), "", unescape(xml_element.text)),
+            text=unescape(xml_element.text.strip()),
             start=float(xml_element.attrib["start"]),
             duration=float(xml_element.attrib.get("dur", "0.0")),
         )
