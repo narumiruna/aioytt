@@ -5,7 +5,7 @@ type:
 	uv run mypy --install-types --non-interactive .
 
 test:
-	uv run pytest -v -s --cov=src tests
+	uv run pytest -v -s --cov=src .
 
 publish:
 	uv build -f wheel
