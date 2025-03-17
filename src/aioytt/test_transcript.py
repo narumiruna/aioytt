@@ -4,8 +4,10 @@ from unittest.mock import patch
 
 import pytest
 
+from .caption import CaptionTrack
 from .errors import CaptionsNotFoundError
 from .transcript import TranscriptSnippet
+from .transcript import get_caption_track
 from .transcript import get_transcript_from_url
 from .transcript import get_transcript_from_video_id
 from .transcript import parse_transcript
@@ -219,3 +221,69 @@ def test_parse_transcript_with_html_entities():
     assert result[0].text == "I & you"
     assert result[1].text == "Less < Greater >"
     assert result[2].text == 'Quote "test"'
+
+
+def test_get_caption_track_empty_tracks():
+    """Test get_caption_track raises CaptionsNotFoundError when caption_tracks is empty."""
+
+    with pytest.raises(CaptionsNotFoundError):
+        get_caption_track([], "en")
+
+
+def test_get_caption_track_single_track():
+    """Test get_caption_track returns the only track when there is just one."""
+
+    track = CaptionTrack(base_url="url", language_code="fr", language="French")
+    result = get_caption_track([track], "en")
+
+    assert result == track
+
+
+def test_get_caption_track_matching_language():
+    """Test get_caption_track returns the track matching the requested language."""
+
+    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
+    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+
+    tracks = [fr_track, en_track, es_track]
+
+    result = get_caption_track(tracks, "en")
+    assert result == en_track
+
+
+def test_get_caption_track_multiple_languages_first_match():
+    """Test get_caption_track returns the first matching language from the provided list."""
+
+    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
+    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+
+    tracks = [fr_track, en_track, es_track]
+
+    result = get_caption_track(tracks, ["es", "en", "fr"])
+    assert result == es_track
+
+
+def test_get_caption_track_no_match():
+    """Test get_caption_track returns the first track when no language matches."""
+
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
+    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+
+    tracks = [fr_track, es_track]
+
+    result = get_caption_track(tracks, "en")
+    assert result == fr_track
+
+
+def test_get_caption_track_string_language_code():
+    """Test get_caption_track handles a string language_code properly."""
+
+    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
+
+    tracks = [fr_track, en_track]
+
+    result = get_caption_track(tracks, "en")
+    assert result == en_track
