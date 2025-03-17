@@ -287,3 +287,150 @@ def test_get_caption_track_string_language_code():
 
     result = get_caption_track(tracks, "en")
     assert result == en_track
+
+
+def test_parse_captions_success():
+    """Test parse_captions correctly extracts captions from HTML."""
+    html = """
+    some content
+    var ytInitialPlayerResponse = {
+        "captions": {
+            "playerCaptionsTracklistRenderer": {
+                "captionTracks": [
+                    {
+                        "baseUrl": "https://example.com/captions",
+                        "languageCode": "en",
+                        "name": {"simpleText": "English"}
+                    }
+                ]
+            }
+        }
+    }
+    </script>
+    more content
+    """
+
+    from .transcript import parse_captions
+
+    captions = parse_captions(html)
+    assert len(captions.caption_tracks) == 1
+    assert captions.caption_tracks[0].base_url == "https://example.com/captions"
+    assert captions.caption_tracks[0].language_code == "en"
+
+
+def test_parse_captions_no_initial_response():
+    """Test parse_captions raises error when ytInitialPlayerResponse not found."""
+    html = "some content without ytInitialPlayerResponse"
+
+    from .errors import InitialPlayerResponseNotFoundError
+    from .transcript import parse_captions
+
+    with pytest.raises(InitialPlayerResponseNotFoundError):
+        parse_captions(html)
+
+
+def test_parse_captions_no_captions():
+    """Test parse_captions raises error when captions not found."""
+    html = """
+    some content
+    var ytInitialPlayerResponse = {
+        "someOtherData": {}
+    }
+    </script>
+    """
+
+    from .errors import CaptionsNotFoundError
+    from .transcript import parse_captions
+
+    with pytest.raises(CaptionsNotFoundError):
+        parse_captions(html)
+
+
+def test_parse_captions_empty_caption_tracks():
+    """Test parse_captions raises error when captionTracks is missing."""
+    html = """
+    some content
+    var ytInitialPlayerResponse = {
+        "captions": {
+            "playerCaptionsTracklistRenderer": {
+                "someOtherField": []
+            }
+        }
+    }
+    </script>
+    """
+
+    from .errors import CaptionsNotFoundError
+    from .transcript import parse_captions
+
+    with pytest.raises(CaptionsNotFoundError):
+        parse_captions(html)
+
+
+@pytest.mark.asyncio
+async def test_fetch_video_html():
+    """Test fetch_video_html calls fetch_html with correct parameters."""
+
+    with patch("aioytt.transcript.fetch_html", new_callable=AsyncMock) as mock_fetch_html:
+        mock_fetch_html.return_value = "<html>Test</html>"
+
+        from .transcript import WATCH_URL
+        from .transcript import fetch_video_html
+
+        result = await fetch_video_html("test_video_id")
+
+        mock_fetch_html.assert_called_once_with(WATCH_URL, params={"v": "test_video_id"})
+        assert result == "<html>Test</html>"
+
+
+@pytest.mark.asyncio
+async def test_fetch_html():
+    """Test fetch_html makes correct httpx request."""
+
+    mock_response = AsyncMock()
+    mock_response.text = "<html>Test response</html>"
+    mock_response.raise_for_status = AsyncMock()
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__.return_value.get.return_value = mock_response
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        from .transcript import fetch_html
+
+        result = await fetch_html("https://example.com", params={"key": "value"})
+
+        mock_client.__aenter__.return_value.get.assert_called_once_with(
+            url="https://example.com", params={"key": "value"}
+        )
+        mock_response.raise_for_status.assert_called_once()
+        assert result == "<html>Test response</html>"
+
+
+def test_get_caption_track_empty_language_code():
+    """Test get_caption_track when empty language_codes list is provided."""
+
+    from .transcript import get_caption_track
+
+    track = CaptionTrack(base_url="url", language_code="fr", language="French")
+    result = get_caption_track([track], [])
+
+    assert result == track
+
+
+@pytest.mark.asyncio
+async def test_get_transcript_from_video_id_no_caption_tracks():
+    """Test that the function raises CaptionsNotFoundError when no caption tracks are found."""
+
+    with (
+        patch("aioytt.transcript.fetch_video_html", new_callable=AsyncMock) as mock_fetch_html,
+        patch("aioytt.transcript.parse_captions") as mock_parse_captions,
+    ):
+        mock_fetch_html.return_value = "<html>Mock HTML</html>"
+
+        # Set up mock captions with no caption tracks
+        mock_captions = AsyncMock()
+        mock_captions.caption_tracks = []
+        mock_parse_captions.return_value = mock_captions
+
+        with pytest.raises(CaptionsNotFoundError):
+            await get_transcript_from_video_id(VIDEO_ID)
