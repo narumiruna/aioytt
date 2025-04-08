@@ -4,13 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
-from .caption import CaptionTrack
-from .errors import CaptionsNotFoundError
-from .transcript import TranscriptSnippet
-from .transcript import get_caption_track
-from .transcript import get_transcript_from_url
-from .transcript import get_transcript_from_video_id
-from .transcript import parse_transcript
+from aioytt.caption import CaptionTrack
+from aioytt.errors import CaptionsNotFoundError
+from aioytt.transcript import TranscriptSnippet
+from aioytt.transcript import get_caption_track
+from aioytt.transcript import get_transcript_from_url
+from aioytt.transcript import get_transcript_from_video_id
+from aioytt.transcript import parse_transcript
 
 VIDEO_ID: Final[str] = "dQw4w9WgXcQ"
 YOUTUBE_URL: Final[str] = f"https://www.youtube.com/watch?v={VIDEO_ID}"
@@ -310,7 +310,7 @@ def test_parse_captions_success():
     more content
     """
 
-    from .transcript import parse_captions
+    from aioytt.transcript import parse_captions
 
     captions = parse_captions(html)
     assert len(captions.caption_tracks) == 1
@@ -322,8 +322,8 @@ def test_parse_captions_no_initial_response():
     """Test parse_captions raises error when ytInitialPlayerResponse not found."""
     html = "some content without ytInitialPlayerResponse"
 
-    from .errors import InitialPlayerResponseNotFoundError
-    from .transcript import parse_captions
+    from aioytt.errors import InitialPlayerResponseNotFoundError
+    from aioytt.transcript import parse_captions
 
     with pytest.raises(InitialPlayerResponseNotFoundError):
         parse_captions(html)
@@ -339,8 +339,8 @@ def test_parse_captions_no_captions():
     </script>
     """
 
-    from .errors import CaptionsNotFoundError
-    from .transcript import parse_captions
+    from aioytt.errors import CaptionsNotFoundError
+    from aioytt.transcript import parse_captions
 
     with pytest.raises(CaptionsNotFoundError):
         parse_captions(html)
@@ -360,8 +360,8 @@ def test_parse_captions_empty_caption_tracks():
     </script>
     """
 
-    from .errors import CaptionsNotFoundError
-    from .transcript import parse_captions
+    from aioytt.errors import CaptionsNotFoundError
+    from aioytt.transcript import parse_captions
 
     with pytest.raises(CaptionsNotFoundError):
         parse_captions(html)
@@ -374,8 +374,8 @@ async def test_fetch_video_html():
     with patch("aioytt.transcript.fetch_html", new_callable=AsyncMock) as mock_fetch_html:
         mock_fetch_html.return_value = "<html>Test</html>"
 
-        from .transcript import WATCH_URL
-        from .transcript import fetch_video_html
+        from aioytt.transcript import WATCH_URL
+        from aioytt.transcript import fetch_video_html
 
         result = await fetch_video_html("test_video_id")
 
@@ -395,7 +395,7 @@ async def test_fetch_html():
     mock_client.__aenter__.return_value.get.return_value = mock_response
 
     with patch("httpx.AsyncClient", return_value=mock_client):
-        from .transcript import fetch_html
+        from aioytt.transcript import fetch_html
 
         result = await fetch_html("https://example.com", params={"key": "value"})
 
@@ -409,7 +409,7 @@ async def test_fetch_html():
 def test_get_caption_track_empty_language_code():
     """Test get_caption_track when empty language_codes list is provided."""
 
-    from .transcript import get_caption_track
+    from aioytt.transcript import get_caption_track
 
     track = CaptionTrack(base_url="url", language_code="fr", language="French")
     result = get_caption_track([track], [])

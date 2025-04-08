@@ -1,10 +1,10 @@
 import pytest
 
-from .errors import NoVideoIDFoundError
-from .errors import UnsupportedURLNetlocError
-from .errors import UnsupportedURLSchemeError
-from .errors import VideoIDError
-from .video_id import parse_video_id
+from aioytt.errors import NoVideoIDFoundError
+from aioytt.errors import UnsupportedURLNetlocError
+from aioytt.errors import UnsupportedURLSchemeError
+from aioytt.errors import VideoIDError
+from aioytt.video_id import parse_video_id
 
 
 class TestParseVideoId:
