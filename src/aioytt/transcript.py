@@ -44,12 +44,12 @@ def parse_captions(html: str) -> Captions:
     if len(splitted_html) < 2:
         raise InitialPlayerResponseNotFoundError()
 
-    splitted_html = splitted_html[1]
-    splitted_html = splitted_html.split("</script>")[0]
-    splitted_html = splitted_html.split(";var head =")[0]
-    splitted_html = splitted_html.strip(";")
+    data = splitted_html[1]
+    data = data.split("</script>")[0]
+    data = data.split(";var head =")[0]
+    data = data.strip(";")
 
-    response_json = json.loads(splitted_html)
+    response_json = json.loads(data)
 
     captions_json = response_json.get("captions", {}).get("playerCaptionsTracklistRenderer")
     if not captions_json or "captionTracks" not in captions_json:
