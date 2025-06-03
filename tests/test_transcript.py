@@ -1,5 +1,6 @@
 from typing import Final
 from unittest.mock import AsyncMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -389,7 +390,7 @@ async def test_fetch_html():
 
     mock_response = AsyncMock()
     mock_response.text = "<html>Test response</html>"
-    mock_response.raise_for_status = AsyncMock()
+    mock_response.raise_for_status = Mock()
 
     mock_client = AsyncMock()
     mock_client.__aenter__.return_value.get.return_value = mock_response
