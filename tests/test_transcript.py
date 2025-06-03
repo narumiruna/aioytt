@@ -233,7 +233,7 @@ def test_get_caption_track_empty_tracks():
 def test_get_caption_track_single_track():
     """Test get_caption_track returns the only track when there is just one."""
 
-    track = CaptionTrack(base_url="url", language_code="fr", language="French")
+    track = CaptionTrack(base_url="url", language_code="fr")
     result = get_caption_track([track], "en")
 
     assert result == track
@@ -242,9 +242,9 @@ def test_get_caption_track_single_track():
 def test_get_caption_track_matching_language():
     """Test get_caption_track returns the track matching the requested language."""
 
-    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
-    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
-    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+    en_track = CaptionTrack(base_url="url_en", language_code="en")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr")
+    es_track = CaptionTrack(base_url="url_es", language_code="es")
 
     tracks = [fr_track, en_track, es_track]
 
@@ -255,9 +255,9 @@ def test_get_caption_track_matching_language():
 def test_get_caption_track_multiple_languages_first_match():
     """Test get_caption_track returns the first matching language from the provided list."""
 
-    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
-    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
-    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+    en_track = CaptionTrack(base_url="url_en", language_code="en")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr")
+    es_track = CaptionTrack(base_url="url_es", language_code="es")
 
     tracks = [fr_track, en_track, es_track]
 
@@ -268,8 +268,8 @@ def test_get_caption_track_multiple_languages_first_match():
 def test_get_caption_track_no_match():
     """Test get_caption_track returns the first track when no language matches."""
 
-    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
-    es_track = CaptionTrack(base_url="url_es", language_code="es", language="Spanish")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr")
+    es_track = CaptionTrack(base_url="url_es", language_code="es")
 
     tracks = [fr_track, es_track]
 
@@ -280,8 +280,8 @@ def test_get_caption_track_no_match():
 def test_get_caption_track_string_language_code():
     """Test get_caption_track handles a string language_code properly."""
 
-    en_track = CaptionTrack(base_url="url_en", language_code="en", language="English")
-    fr_track = CaptionTrack(base_url="url_fr", language_code="fr", language="French")
+    en_track = CaptionTrack(base_url="url_en", language_code="en")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr")
 
     tracks = [fr_track, en_track]
 
@@ -411,7 +411,7 @@ def test_get_caption_track_empty_language_code():
 
     from aioytt.transcript import get_caption_track
 
-    track = CaptionTrack(base_url="url", language_code="fr", language="French")
+    track = CaptionTrack(base_url="url", language_code="fr")
     result = get_caption_track([track], [])
 
     assert result == track

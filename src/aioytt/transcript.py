@@ -88,15 +88,20 @@ def get_caption_track(caption_tracks: list[CaptionTrack], language_codes: str | 
 
 
 def parse_transcript(xml: str) -> list[TranscriptSnippet]:
-    return [
-        TranscriptSnippet(
-            text=unescape(xml_element.text.strip()),
-            start=float(xml_element.attrib["start"]),
-            duration=float(xml_element.attrib.get("dur", "0.0")),
+    transcript_snippets = []
+    for xml_element in ElementTree.fromstring(xml):
+        text = xml_element.text
+        if text is None:
+            continue
+
+        transcript_snippets.append(
+            TranscriptSnippet(
+                text=unescape(text.strip()),
+                start=float(xml_element.attrib["start"]),
+                duration=float(xml_element.attrib.get("dur", "0.0")),
+            )
         )
-        for xml_element in ElementTree.fromstring(xml)
-        if xml_element.text is not None
-    ]
+    return transcript_snippets
 
 
 async def get_transcript_from_video_id(
@@ -108,10 +113,11 @@ async def get_transcript_from_video_id(
 
     caption_track = get_caption_track(captions.caption_tracks, language_codes)
 
-    if not caption_track.base_url:
+    base_url = caption_track.base_url
+    if base_url is None:
         raise CaptionsNotFoundError()
 
-    xml = await fetch_html(caption_track.base_url)
+    xml = await fetch_html(base_url)
     return parse_transcript(xml)
 
 
