@@ -1,6 +1,3 @@
-from collections.abc import Iterable
-
-
 class AioyttError(Exception):
     pass
 
@@ -33,9 +30,3 @@ class InitialPlayerResponseNotFoundError(AioyttError):
 class CaptionsNotFoundError(AioyttError):
     def __init__(self) -> None:
         super().__init__("No captions found in the video")
-
-
-class LanguageNotFoundError(AioyttError):
-    def __init__(self, language_codes: Iterable[str]) -> None:
-        codes = ", ".join(language_codes) if isinstance(language_codes, list) else str(language_codes)
-        super().__init__(f"Requested language(s) not found: {codes}")

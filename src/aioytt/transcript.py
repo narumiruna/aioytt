@@ -37,13 +37,35 @@ _FORMATTING_TAGS = [
 
 
 class TranscriptSnippet(BaseModel):
+    """A single snippet of transcript with timing information.
+
+    Attributes:
+        text: The transcript text (HTML entities decoded).
+        start: Start time in seconds.
+        duration: Duration in seconds.
+    """
+
     text: str
     start: float
     duration: float
 
 
-# var ytInitialPlayerResponse = {"responseContext": ...
 def parse_captions(html: str) -> Captions:
+    """Parse caption data from YouTube video page HTML.
+
+    Extracts the ytInitialPlayerResponse JSON from the HTML and parses
+    the caption tracks information.
+
+    Args:
+        html: YouTube video page HTML content.
+
+    Returns:
+        Captions object containing caption tracks and audio tracks.
+
+    Raises:
+        InitialPlayerResponseNotFoundError: If ytInitialPlayerResponse variable not found.
+        CaptionsNotFoundError: If no caption tracks found in the response.
+    """
     splitted_html = html.split("var ytInitialPlayerResponse =")
 
     if len(splitted_html) < 2:
@@ -64,6 +86,17 @@ def parse_captions(html: str) -> Captions:
 
 
 async def fetch_video_html(video_id: str) -> str:
+    """Fetch YouTube video page HTML by video ID.
+
+    Args:
+        video_id: YouTube video ID (11 characters).
+
+    Returns:
+        HTML content of the video page.
+
+    Raises:
+        httpx.HTTPError: If the request fails.
+    """
     return await fetch_html(WATCH_URL, params={"v": video_id})
 
 
@@ -74,6 +107,22 @@ async def fetch_video_html(video_id: str) -> str:
     reraise=True,
 )
 async def fetch_html(url: str, params=None) -> str:
+    """Fetch HTML content from a URL with automatic retry on network errors.
+
+    Automatically retries up to 3 times with exponential backoff (1s, 2s, 4s)
+    for network-related errors (ConnectError, TimeoutException, NetworkError).
+    HTTP status errors (4xx, 5xx) are not retried.
+
+    Args:
+        url: The URL to fetch.
+        params: Optional query parameters.
+
+    Returns:
+        HTML content as string.
+
+    Raises:
+        httpx.HTTPError: If the request fails after retries or encounters HTTP status errors.
+    """
     logger.debug(f"Fetching URL: {url}")
     async with httpx.AsyncClient() as client:
         response = await client.get(url=url, params=params)
@@ -82,6 +131,22 @@ async def fetch_html(url: str, params=None) -> str:
 
 
 def get_caption_track(caption_tracks: list[CaptionTrack], language_codes: str | Iterable[str]) -> CaptionTrack:
+    """Select a caption track based on language preferences.
+
+    Selects the first available caption track that matches the requested
+    language codes (in order of preference). If no match is found, returns
+    the first available track.
+
+    Args:
+        caption_tracks: List of available caption tracks.
+        language_codes: Single language code or iterable of codes in priority order.
+
+    Returns:
+        The selected caption track.
+
+    Raises:
+        CaptionsNotFoundError: If no caption tracks are available.
+    """
     if not caption_tracks:
         raise CaptionsNotFoundError()
 
@@ -100,6 +165,17 @@ def get_caption_track(caption_tracks: list[CaptionTrack], language_codes: str | 
 
 
 def parse_transcript(xml: str) -> list[TranscriptSnippet]:
+    """Parse transcript XML into structured snippets.
+
+    Parses YouTube caption track XML format into TranscriptSnippet objects.
+    HTML entities in text are automatically decoded.
+
+    Args:
+        xml: Caption track XML content.
+
+    Returns:
+        List of transcript snippets with text and timing information.
+    """
     transcript_snippets = []
     for xml_element in ElementTree.fromstring(xml):
         text = xml_element.text
@@ -119,6 +195,27 @@ def parse_transcript(xml: str) -> list[TranscriptSnippet]:
 async def get_transcript_from_video_id(
     video_id: str, language_codes: str | Iterable[str] = ("en",)
 ) -> list[TranscriptSnippet]:
+    """Extract transcript from a YouTube video by video ID.
+
+    Fetches the video page, extracts caption data, selects the appropriate
+    language track, and returns the parsed transcript.
+
+    Args:
+        video_id: YouTube video ID (11 characters).
+        language_codes: Language code(s) in priority order. Defaults to English ("en").
+            Can be a single string or iterable of strings.
+
+    Returns:
+        List of transcript snippets with text and timing information.
+
+    Raises:
+        CaptionsNotFoundError: If no captions are available or no base URL found.
+        httpx.HTTPError: If network requests fail.
+
+    Example:
+        >>> transcript = await get_transcript_from_video_id("dQw4w9WgXcQ")
+        >>> transcript = await get_transcript_from_video_id("dQw4w9WgXcQ", ["zh-TW", "en"])
+    """
     video_html = await fetch_video_html(video_id)
 
     captions = parse_captions(video_html)
@@ -134,5 +231,31 @@ async def get_transcript_from_video_id(
 
 
 async def get_transcript_from_url(url: str, language_codes: str | Iterable[str] = ("en",)) -> list[TranscriptSnippet]:
+    """Extract transcript from a YouTube video by URL.
+
+    Parses the video ID from the URL and fetches the transcript.
+    Supports various YouTube URL formats (youtube.com, youtu.be, etc.).
+
+    Args:
+        url: YouTube video URL.
+        language_codes: Language code(s) in priority order. Defaults to English ("en").
+            Can be a single string or iterable of strings.
+
+    Returns:
+        List of transcript snippets with text and timing information.
+
+    Raises:
+        VideoIDError: If the URL contains an invalid video ID.
+        UnsupportedURLSchemeError: If the URL scheme is not supported.
+        UnsupportedURLNetlocError: If the URL domain is not supported.
+        NoVideoIDFoundError: If no video ID found in the URL.
+        CaptionsNotFoundError: If no captions are available.
+        httpx.HTTPError: If network requests fail.
+
+    Example:
+        >>> url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        >>> transcript = await get_transcript_from_url(url)
+        >>> transcript = await get_transcript_from_url(url, ["zh-TW", "en"])
+    """
     video_id = parse_video_id(url)
     return await get_transcript_from_video_id(video_id, language_codes)

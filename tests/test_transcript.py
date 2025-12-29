@@ -266,6 +266,19 @@ def test_get_caption_track_multiple_languages_first_match():
     assert result == es_track
 
 
+def test_get_caption_track_second_language_match():
+    """Test get_caption_track returns track for second language when first doesn't match."""
+
+    en_track = CaptionTrack(base_url="url_en", language_code="en")
+    fr_track = CaptionTrack(base_url="url_fr", language_code="fr")
+
+    tracks = [en_track, fr_track]
+
+    # Request languages in order: es (not available), fr (available)
+    result = get_caption_track(tracks, ["es", "fr"])
+    assert result == fr_track
+
+
 def test_get_caption_track_no_match():
     """Test get_caption_track returns the first track when no language matches."""
 

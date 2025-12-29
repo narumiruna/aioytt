@@ -6,7 +6,6 @@ from .errors import UnsupportedURLNetlocError
 from .errors import UnsupportedURLSchemeError
 from .errors import VideoIDError
 
-DEFAULT_LANGUAGES = ["zh-TW", "zh-Hant", "zh", "zh-Hans", "ja", "en", "ko"]
 ALLOWED_SCHEMES = {
     "http",
     "https",
@@ -22,7 +21,33 @@ ALLOWED_NETLOCS = {
 
 
 def parse_video_id(url: str) -> str:
-    """Parse a YouTube URL and return the video ID if valid, otherwise None."""
+    """Parse and extract the video ID from a YouTube URL.
+
+    Supports various YouTube URL formats including:
+    - https://www.youtube.com/watch?v=VIDEO_ID
+    - https://youtu.be/VIDEO_ID
+    - https://m.youtube.com/watch?v=VIDEO_ID
+    - https://www.youtube-nocookie.com/watch?v=VIDEO_ID
+    - https://vid.plus/VIDEO_ID
+
+    Args:
+        url: YouTube video URL.
+
+    Returns:
+        11-character video ID.
+
+    Raises:
+        UnsupportedURLSchemeError: If URL scheme is not http or https.
+        UnsupportedURLNetlocError: If URL domain is not a supported YouTube domain.
+        NoVideoIDFoundError: If no video ID parameter found in the URL.
+        VideoIDError: If extracted video ID is not exactly 11 characters.
+
+    Example:
+        >>> parse_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        'dQw4w9WgXcQ'
+        >>> parse_video_id("https://youtu.be/dQw4w9WgXcQ")
+        'dQw4w9WgXcQ'
+    """
     parsed_url = urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:

@@ -102,7 +102,7 @@ The project uses pre-commit for automated checks including ruff, ty, and uv-lock
   - HTTP status errors (4xx, 5xx) are not retried
   - Logging at debug level for retry attempts
 - **Language Selection Logic**: `get_caption_track()` accepts string or iterable of language codes, matches in order, returns first track if no match
-- **Default Language**: Defaults to English (`"en"`), but `DEFAULT_LANGUAGES` in video_id.py defines a Traditional Chinese-first language list (not used in main flow)
+- **Default Language**: Defaults to English (`"en"`)
 - **HTML Entity Handling**: Uses `html.unescape()` to handle HTML entities in caption text
 - **XML Parsing**: Uses stdlib `xml.etree.ElementTree`, filters out elements without text content
 
@@ -146,26 +146,25 @@ The project uses pre-commit for automated checks including ruff, ty, and uv-lock
 
 ### Extending Language Support
 - Current default: English (`"en"`)
-- To change: Modify the default in function signatures or use `DEFAULT_LANGUAGES`
+- To change: Pass different language codes to `get_transcript_from_url()` or `get_transcript_from_video_id()`
 - Language matching is case-sensitive and uses YouTube's language codes
+- Example: `get_transcript_from_url(url, ["zh-TW", "en"])` tries Traditional Chinese first, then English
 
 ## Known Limitations and Gotchas
 
 - `parse_captions()` depends on the `ytInitialPlayerResponse` variable in YouTube's HTML structure; changes to YouTube's structure may break parsing
 - Video ID length is fixed at 11 characters; this validation may need adjustment as YouTube's system evolves
 - Caption track selection logic: If no matching language is found, automatically falls back to the first available caption track
-- `DEFAULT_LANGUAGES` constant in video_id.py is defined but not used in the main flow
 
 ## Potential Improvements
 
 ### High Priority
-- **Add docstrings**: Functions lack documentation strings for better IDE support and user guidance
 - **Error context**: Enhance error messages with more context (e.g., available languages when requested language not found)
 
 ### Medium Priority
 - **CLI tool**: Add command-line interface to leverage the `rich` dependency (e.g., `aioytt <url>`)
 - **Integration tests**: Add end-to-end tests with recorded HTTP responses (consider using vcrpy)
-- **Use DEFAULT_LANGUAGES**: Either integrate the language priority list into `get_caption_track()` or remove it
+- **Get available languages**: Add function to list available caption languages for a video
 
 ### Low Priority
 - **More precise type hints**: Improve type accuracy (e.g., parse_qs returns `dict[str, list[str]]`)
