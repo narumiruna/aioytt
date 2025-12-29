@@ -21,10 +21,10 @@ make lint
 # or
 uv run ruff check .
 
-# Type checking (using mypy)
+# Type checking (using ty)
 make type
 # or
-uv run mypy --install-types --non-interactive src
+uv run ty check .
 ```
 
 ### Testing
@@ -49,12 +49,12 @@ uv build -f wheel && uv publish
 ```
 
 ### Pre-commit Hooks
-The project uses pre-commit for automated checks including ruff, mypy, and uv-lock.
+The project uses pre-commit for automated checks including ruff, ty, and uv-lock.
 
 ### CI/CD
 - **GitHub Actions**: Runs on push/PR to main branch
   - Python 3.12 matrix
-  - Steps: lint → type check → test → upload coverage to Codecov
+  - Steps: lint → type check (ty) → test → upload coverage to Codecov
 - **Publishing**: Manual workflow using `make publish` (builds wheel and publishes to PyPI)
 - **Coverage**: Integrated with Codecov (requires `CODECOV_TOKEN` secret)
 
@@ -160,7 +160,6 @@ The project uses pre-commit for automated checks including ruff, mypy, and uv-lo
 
 ### High Priority
 - **Add docstrings**: Functions lack documentation strings for better IDE support and user guidance
-- **Fill pyproject.toml description**: Currently empty, should describe the project
 - **Error context**: Enhance error messages with more context (e.g., available languages when requested language not found)
 
 ### Medium Priority
