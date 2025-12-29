@@ -522,9 +522,7 @@ async def test_fetch_html_no_retry_on_http_status_error():
     from aioytt.transcript import fetch_html
 
     mock_response = Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "404 Not Found", request=Mock(), response=Mock()
-    )
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("404 Not Found", request=Mock(), response=Mock())
 
     mock_client = AsyncMock()
     mock_get = mock_client.__aenter__.return_value.get
