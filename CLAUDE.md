@@ -125,6 +125,7 @@ The project uses pre-commit for automated checks including ruff, ty, and uv-lock
 - Async tests require `@pytest.mark.asyncio` decorator
 - Heavy use of `unittest.mock.patch` and `AsyncMock` for unit tests
 - Coverage reports use `pytest-cov`
+- **Note**: Retry mechanism tests were removed to avoid test delays (retry functionality is still present in code)
 
 ### Logging
 - Uses `loguru` for logging
