@@ -7,7 +7,12 @@ from typing import Final
 from xml.etree import ElementTree
 
 import httpx
+from loguru import logger
 from pydantic import BaseModel
+from tenacity import retry
+from tenacity import retry_if_exception_type
+from tenacity import stop_after_attempt
+from tenacity import wait_exponential
 
 from .caption import Captions
 from .caption import CaptionTrack
@@ -62,7 +67,14 @@ async def fetch_video_html(video_id: str) -> str:
     return await fetch_html(WATCH_URL, params={"v": video_id})
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError)),
+    reraise=True,
+)
 async def fetch_html(url: str, params=None) -> str:
+    logger.debug(f"Fetching URL: {url}")
     async with httpx.AsyncClient() as client:
         response = await client.get(url=url, params=params)
         response.raise_for_status()

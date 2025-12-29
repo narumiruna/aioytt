@@ -96,6 +96,11 @@ The project uses pre-commit for automated checks including ruff, mypy, and uv-lo
 ### Key Design Decisions
 
 - **Async Design**: All HTTP requests use `httpx.AsyncClient` for async operations
+- **HTTP Retry Mechanism**: Uses `tenacity` for automatic retries on network failures
+  - Retries up to 3 times on `ConnectError`, `TimeoutException`, and `NetworkError`
+  - Exponential backoff: 1s, 2s, 4s (max 10s)
+  - HTTP status errors (4xx, 5xx) are not retried
+  - Logging at debug level for retry attempts
 - **Language Selection Logic**: `get_caption_track()` accepts string or iterable of language codes, matches in order, returns first track if no match
 - **Default Language**: Defaults to English (`"en"`), but `DEFAULT_LANGUAGES` in video_id.py defines a Traditional Chinese-first language list (not used in main flow)
 - **HTML Entity Handling**: Uses `html.unescape()` to handle HTML entities in caption text
@@ -149,7 +154,6 @@ The project uses pre-commit for automated checks including ruff, mypy, and uv-lo
 - `parse_captions()` depends on the `ytInitialPlayerResponse` variable in YouTube's HTML structure; changes to YouTube's structure may break parsing
 - Video ID length is fixed at 11 characters; this validation may need adjustment as YouTube's system evolves
 - Caption track selection logic: If no matching language is found, automatically falls back to the first available caption track
-- No HTTP retry mechanism for network failures
 - `DEFAULT_LANGUAGES` constant in video_id.py is defined but not used in the main flow
 
 ## Potential Improvements
@@ -160,7 +164,6 @@ The project uses pre-commit for automated checks including ruff, mypy, and uv-lo
 - **Error context**: Enhance error messages with more context (e.g., available languages when requested language not found)
 
 ### Medium Priority
-- **HTTP retry logic**: Add retry mechanism for transient network failures using tenacity or httpx retry
 - **CLI tool**: Add command-line interface to leverage the `rich` dependency (e.g., `aioytt <url>`)
 - **Integration tests**: Add end-to-end tests with recorded HTTP responses (consider using vcrpy)
 - **Use DEFAULT_LANGUAGES**: Either integrate the language priority list into `get_caption_track()` or remove it

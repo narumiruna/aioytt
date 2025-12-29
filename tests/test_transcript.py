@@ -435,3 +435,104 @@ async def test_get_transcript_from_video_id_no_caption_tracks():
 
         with pytest.raises(CaptionsNotFoundError):
             await get_transcript_from_video_id(VIDEO_ID)
+
+
+@pytest.mark.asyncio
+async def test_fetch_html_retries_on_network_error():
+    """Test that fetch_html retries on network errors and eventually succeeds."""
+    import httpx
+
+    from aioytt.transcript import fetch_html
+
+    mock_response = AsyncMock()
+    mock_response.text = "<html>Success</html>"
+    mock_response.raise_for_status = Mock()
+
+    mock_client = AsyncMock()
+    mock_get = mock_client.__aenter__.return_value.get
+
+    # Fail twice with NetworkError, then succeed
+    mock_get.side_effect = [
+        httpx.NetworkError("Network error"),
+        httpx.NetworkError("Network error"),
+        mock_response,
+    ]
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        result = await fetch_html("https://example.com")
+
+        # Should have been called 3 times (2 failures + 1 success)
+        assert mock_get.call_count == 3
+        assert result == "<html>Success</html>"
+
+
+@pytest.mark.asyncio
+async def test_fetch_html_retries_on_timeout():
+    """Test that fetch_html retries on timeout errors."""
+    import httpx
+
+    from aioytt.transcript import fetch_html
+
+    mock_response = AsyncMock()
+    mock_response.text = "<html>Success</html>"
+    mock_response.raise_for_status = Mock()
+
+    mock_client = AsyncMock()
+    mock_get = mock_client.__aenter__.return_value.get
+
+    # Fail once with timeout, then succeed
+    mock_get.side_effect = [
+        httpx.TimeoutException("Timeout"),
+        mock_response,
+    ]
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        result = await fetch_html("https://example.com")
+
+        assert mock_get.call_count == 2
+        assert result == "<html>Success</html>"
+
+
+@pytest.mark.asyncio
+async def test_fetch_html_fails_after_max_retries():
+    """Test that fetch_html fails after max retry attempts."""
+    import httpx
+
+    from aioytt.transcript import fetch_html
+
+    mock_client = AsyncMock()
+    mock_get = mock_client.__aenter__.return_value.get
+
+    # Always fail with NetworkError
+    mock_get.side_effect = httpx.NetworkError("Network error")
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with pytest.raises(httpx.NetworkError):
+            await fetch_html("https://example.com")
+
+        # Should have retried 3 times (max attempts)
+        assert mock_get.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_fetch_html_no_retry_on_http_status_error():
+    """Test that fetch_html does not retry on HTTP status errors."""
+    import httpx
+
+    from aioytt.transcript import fetch_html
+
+    mock_response = Mock()
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "404 Not Found", request=Mock(), response=Mock()
+    )
+
+    mock_client = AsyncMock()
+    mock_get = mock_client.__aenter__.return_value.get
+    mock_get.return_value = mock_response
+
+    with patch("httpx.AsyncClient", return_value=mock_client):
+        with pytest.raises(httpx.HTTPStatusError):
+            await fetch_html("https://example.com")
+
+        # Should have been called only once (no retry for HTTP errors)
+        assert mock_get.call_count == 1
